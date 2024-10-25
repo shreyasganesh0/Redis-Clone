@@ -18,12 +18,11 @@ def main():
         client_socket,address = server_socket.accept() # wait for client request and accept the connection
         
         data_input = client_socket.recv(1024) # read the data from the client
-
         
-        input_len = parse_input(data_input.decode('ASCII'))
+        #input_len = parse_input(data_input.decode('ASCII'))
 
-        for i in range(input_len):
-            client_socket.send(b"+PONG\r\n") # reply to the client with pong (hardcoded for now)
+        #for i in range(input_len):
+        client_socket.send(b"+PONG\r\n") # reply to the client with pong (hardcoded for now)
         
         if not data_input:
             break # client closed the connection
