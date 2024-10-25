@@ -17,7 +17,7 @@ def main():
         if not data_input:
             break # client closed the connection
 
-        client_socket.send(f'+PONG\r\n') # reply to the client with pong (hardcoded for now)
+        client_socket.send(b"+PONG\r\n") # reply to the client with pong (hardcoded for now)
     client_socket.close()
 
 
