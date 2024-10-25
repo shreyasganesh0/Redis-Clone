@@ -20,7 +20,7 @@ def main():
         if not data_input:
             break # client closed the connection
         
-        input_len = parse_input(data_input)
+        input_len = parse_input(data_input.decode('ASCII'))
 
         for i in range(input_len):
             client_socket.send(b"+PONG\r\n") # reply to the client with pong (hardcoded for now)
