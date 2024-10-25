@@ -1,5 +1,10 @@
 import socket  # noqa: F401
 
+def parse_input(data):
+    print("data received is ",data.split("\r\n")[2:])
+    return (len(data.split("\r\n",)[2:]) - 1)# count the number of 'PING's sent by the client
+    
+
 
 def main():
     # You can use print statements as follows for debugging, they'll be visible when running tests.
@@ -10,11 +15,10 @@ def main():
     server_socket.listen(6379) # listen on the port
 
     while True:
-        print("here")
         client_socket,address = server_socket.accept() # wait for client request and accept the connection
+        
         while True:
             data_input = client_socket.recv(2048) # read the data from the client
-            print("here", data_input)
 
             if not data_input:
                 break
@@ -24,6 +28,7 @@ def main():
         if not data_input:
             break
 
+    
     client_socket.close()
 
 
