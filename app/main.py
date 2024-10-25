@@ -1,7 +1,9 @@
 import socket  # noqa: F401
 
 def parse_input(data):
-    return len(data[:-2].split('\r\n')) # count the number of 'PING's sent by the client
+    print("data received is ", data)
+    return len(data[].split('\r\n')) # count the number of 'PING's sent by the client
+    
 
 
 def main():
