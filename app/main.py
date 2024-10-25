@@ -17,15 +17,16 @@ def main():
     while True:
         client_socket,address = server_socket.accept() # wait for client request and accept the connection
         
-        data_input = client_socket.recv(1024) # read the data from the client
+        data_input = client_socket.recv(2048) # read the data from the client
         
         #input_len = parse_input(data_input.decode('ASCII'))
 
         #for i in range(input_len):
         client_socket.send(b"+PONG\r\n") # reply to the client with pong (hardcoded for now)
         
-        #if not data_input:
-            #break # client closed the connection
+        if not data_input:
+            continue
+        #break # client closed the connection
     
    # client_socket.close()
 
