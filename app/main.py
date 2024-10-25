@@ -15,6 +15,7 @@ def main():
     server_socket.listen(6379) # listen on the port
 
     while True:
+        print("here")
         client_socket,address = server_socket.accept() # wait for client request and accept the connection
         
         data_input = client_socket.recv(2048) # read the data from the client
