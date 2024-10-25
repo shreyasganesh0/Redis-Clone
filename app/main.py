@@ -1,5 +1,8 @@
 import socket  # noqa: F401
 
+def parse_input(data):
+    return len(data.split('\n')) # count the number of 'PING's sent by the client
+
 
 def main():
     # You can use print statements as follows for debugging, they'll be visible when running tests.
@@ -16,8 +19,12 @@ def main():
 
         if not data_input:
             break # client closed the connection
+        
+        input_len = parse_input(data_input)
 
-        client_socket.send(b"+PONG\r\n") # reply to the client with pong (hardcoded for now)
+        for i in range(input_len):
+            client_socket.send(b"+PONG\r\n") # reply to the client with pong (hardcoded for now)
+    
     client_socket.close()
 
 
