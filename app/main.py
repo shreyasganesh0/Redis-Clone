@@ -24,10 +24,10 @@ def main():
         #for i in range(input_len):
         client_socket.send(b"+PONG\r\n") # reply to the client with pong (hardcoded for now)
         
-        if not data_input:
-            break # client closed the connection
+        #if not data_input:
+            #break # client closed the connection
     
-    client_socket.close()
+   # client_socket.close()
 
 
 if __name__ == "__main__":
