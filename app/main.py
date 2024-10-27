@@ -1,6 +1,10 @@
 import socket  # noqa: F401
 import threading
 import concurrent.futures
+import asyncio
+from asyncio import events
+
+TIMEOUT=5000
 
 def parse_input(data):
     print("data received is ",data.split("\r\n")[2:])
@@ -9,41 +13,26 @@ def parse_input(data):
 def socket_accept(server_socket):
     return server_socket.accept()
 
-def client_req_resp(client_socket):
+async def client_req_resp(reader,writer):
     while True:
-            
-        data_input = client_socket.recv(2048) # read the data from the client
+
+        data_input = await asyncio.wait_for(reader.read(2048), timeout=TIMEOUT) # read the data from the client
 
         if not data_input:
             break
 
-        client_socket.send(b"+PONG\r\n") # reply to the client with pong (hardcoded for now)
+        writer.write(b"+PONG\r\n") # reply to the client with pong (hardcoded for now)
+    writer.close
 
-
-    client_socket.close()
-
-
-def main():
+async def main():
     # You can use print statements as follows for debugging, they'll be visible when running tests.
     print("Logs from your program will appear here!")
 
-
-    server_socket = socket.create_server(("localhost", 6379), reuse_port=True)
+    server = await asyncio.start_server(client_req_resp,"localhost", 6379)
     
-    server_socket.listen(6379) # listen on the port
-
-    # We can use a with statement to ensure threads are cleaned up promptly
-    with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
-        # Start the load operations and mark each future with its URL
-        client_set=set()
-        while True:
-            num_threads = threading.active_count()
-            print("Number of active threads:", num_threads)
-            client_socket,_=socket_accept(server_socket)
-            if client_socket not in client_set:
-                client_set.add(client_socket)
-                executor.submit(client_req_resp,client_socket)
+    async with server:
+        await server.serve_forever()
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
