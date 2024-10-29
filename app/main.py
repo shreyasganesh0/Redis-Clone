@@ -16,6 +16,7 @@ class RedisDB:
 
     def parse_input(self, data: bytearray) -> str:
         print("data received is ",data)
+        
         data_list = []
         
         data_list = data.decode().split("\r\n") 
@@ -33,9 +34,6 @@ class RedisDB:
         resp=method(self, bulk_string_data)
 
         return resp # send decoded string response
-    
-  #  def socket_accept(server_socket):
-  #      return server_socket.accept()
 
     async def client_req_resp(self, reader, writer) -> None:
         while True:
@@ -48,7 +46,6 @@ class RedisDB:
             resp=''
             resp = self.parse_input(data_input)
             
-            # creates a RESP simple string from the response will probably need a method to send any form of output depending on command in the future
             resp = resp.encode()
 
             writer.write(resp) # reply to the client with pong (hardcoded for now)

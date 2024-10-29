@@ -1,6 +1,8 @@
 #from abc import ABC, abstractmethod
 #from pydantic import BaseModel
 from enum import Enum
+from datetime import timedelta, timezone, datetime
+
 
 
 class Command(Enum):
@@ -23,10 +25,17 @@ class CommandExecutor:
     def set( *args):
 
         print(args)
+        if len(args[1])<=3:
+            obj, key, value = args[0], args[1][1], args[1][2]
+            timeout = -1
         
-        obj, key, value = args[0], args[1][1], args[1][2]
+        else:
+            flag = True
+            obj, key, value, timeout = args[0], args[1][1], args[1][2], args[1][4]
         
-        obj.kvstore[key] = value
+        obj.kvstore[key] = (value,timeout,datetime.now(timezone.utc))
+
+        print(obj.kvstore)
         
         return "+OK\r\n"
 
@@ -34,10 +43,23 @@ class CommandExecutor:
     def get( *args):
 
         obj, key = args[0], args[1][1]
-        
-        val = obj.kvstore[key]
-        resp = f'${len(val)}\r\n{val}\r\n'
 
+        
+        val, timeout, time_insert = obj.kvstore.get(key, ["",10000000,0])
+
+        if timeout==-1:
+            return f'${len(val)}\r\n{val}\r\n'
+       
+        if datetime.now(timezone.utc)-time_insert > timedelta(milliseconds=int(timeout)):
+            del obj.kvstore[key]
+            val=""
+
+        if val=="":
+            print("here")
+            resp = "$-1\r\n"
+        else:
+            resp = f'${len(val)}\r\n{val}\r\n'
+        
         return resp
     
 
