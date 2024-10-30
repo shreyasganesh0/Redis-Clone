@@ -12,6 +12,8 @@ class Command(Enum):
     GET = 4
 
 class CommandExecutor:
+
+      
     @staticmethod
     def echo( *args):
         obj, message = args[0], args[1][1]
@@ -62,13 +64,30 @@ class CommandExecutor:
         
         return resp
     
+    @staticmethod
+    def configget( *args) -> str:
+
+        print(args)
+
+        obj, req = args[0], args[1][2]
+
+        req_size = len(req)
+
+
+        if req == "dir":
+            path = obj.dir
+            path_size = len(path)
+        
+        elif req == "dbfilename":
+            path = obj.file
+            path_size = len(path)
+
+        
+        resp = f"*2\r\n${req_size}\r\n{req}\r\n${path_size}\r\n{path}\r\n"
+
+        return resp      
 
 # operation = Operation.ADD
 # method = getattr(Calculator, operation.name.lower())
 # result = method(2, 3
     
-
-
-    
-    
-

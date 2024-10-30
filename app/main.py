@@ -12,6 +12,9 @@ class RedisDB:
 
     
     kvstore: dict = {}
+    two_command: set = set({"CONFIG"})
+    dir: str = "tmp/redis-files"
+    file: str = "dump.rdb"
 
 
     def parse_input(self, data: bytearray) -> str:
@@ -27,7 +30,13 @@ class RedisDB:
 
         print(bulk_string_data)
 
-        command = bulk_string_data[0] # assumes only the first bulk string value will be the command
+        command = bulk_string_data[0]
+
+        print(self.two_command)
+        if command in self.two_command:
+            command+=bulk_string_data[1]
+        
+        print(command)
 
         method = getattr(CommandExecutor, command.lower())
 
