@@ -67,19 +67,18 @@ class CommandExecutor:
     @staticmethod
     def configget( *args) -> str:
 
-        print(args)
+        _, req, parser_obj = args[0], args[1][2], args[2]
 
-        obj, req = args[0], args[1][2]
+        args= parser_obj.parse_args()
 
         req_size = len(req)
 
-
         if req == "dir":
-            path = obj.dir
+            path = args.dir
             path_size = len(path)
         
         elif req == "dbfilename":
-            path = obj.file
+            path = args.dbfilename
             path_size = len(path)
 
         

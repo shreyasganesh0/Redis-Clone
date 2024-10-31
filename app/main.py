@@ -4,6 +4,7 @@ import concurrent.futures
 import asyncio
 from asyncio import events
 from .commandhandler import CommandExecutor
+import argparse
 
 
 TIMEOUT=5000
@@ -15,6 +16,17 @@ class RedisDB:
     two_command: set = set({"CONFIG"})
     dir: str = "tmp/redis-files"
     file: str = "dump.rdb"
+
+    def arg_parser_init(self) -> object:
+
+        parser= argparse.ArgumentParser(description = "Parse command line args for testing")
+
+        parser.add_argument('--dir', type = str , default = self.dir, help = "Get the RDB file location")
+        
+        parser.add_argument('--dbfilename', type = str , default = self.file, help = "Get the RDB file name")
+
+        return parser
+        
 
 
     def parse_input(self, data: bytearray) -> str:
@@ -40,7 +52,9 @@ class RedisDB:
 
         method = getattr(CommandExecutor, command.lower())
 
-        resp=method(self, bulk_string_data)
+        parsobj = self.arg_parser_init()
+
+        resp=method(self, bulk_string_data, parsobj)
 
         return resp # send decoded string response
 
