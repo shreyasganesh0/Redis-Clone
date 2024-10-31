@@ -59,4 +59,4 @@ You can fix this by installing Python 3.8 locally and using that.
 If you'd like to use a different version of Python, change the `language_pack`
 value in `codecrafters.yml`.
 
-
+Adding link to the live document in which all learnings were updated as I coded this. ["Implementation detailed doc"](https://docs.google.com/document/d/e/2PACX-1vSqUDVC1HJPQDn1d9Vd936IpVp22T86iKh8bRbKiO4wUDwb1szyqD5fInpLv-6snrxo7TCcuKNbKudf/pub)
