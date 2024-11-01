@@ -14,8 +14,8 @@ class RedisDB:
     
     kvstore: dict = {}
     two_command: set = set({"CONFIG"})
-    dir: str = "tmp/redis-files"
-    file: str = "dump.rdb"
+    
+
 
     def arg_parser_init(self) -> object:
 
@@ -50,11 +50,11 @@ class RedisDB:
         
         print(command)
 
-        method = getattr(CommandExecutor, command.lower())
+        command_method = getattr(CommandExecutor, command.lower())
 
         parsobj = self.arg_parser_init()
 
-        resp=method(self, bulk_string_data, parsobj)
+        resp = command_method(self, bulk_string_data, parsobj)
 
         return resp # send decoded string response
 

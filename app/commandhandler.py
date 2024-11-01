@@ -2,6 +2,7 @@
 #from pydantic import BaseModel
 from enum import Enum
 from datetime import timedelta, timezone, datetime
+from .rbdhandler import RdbHandler
 
 
 
@@ -84,7 +85,16 @@ class CommandExecutor:
         
         resp = f"*2\r\n${req_size}\r\n{req}\r\n${path_size}\r\n{path}\r\n"
 
-        return resp      
+        return resp   
+    
+    @staticmethod
+    def keys( *args):
+
+        obj, regex = args[0], args[1][1]
+
+        RdbHandler.parsekey(regex)
+
+
 
 # operation = Operation.ADD
 # method = getattr(Calculator, operation.name.lower())
