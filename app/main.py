@@ -14,10 +14,11 @@ class RedisDB:
     
     kvstore: dict = {}
     two_command: set = set({"CONFIG"})
-    
+    dir: str = "tmp/redis-files"
+    file: str = "dump.rdb"
 
 
-    def arg_parser_init(self) -> object:
+    def arg_parser_init(self) -> None:
 
         parser= argparse.ArgumentParser(description = "Parse command line args for testing")
 
@@ -25,7 +26,13 @@ class RedisDB:
         
         parser.add_argument('--dbfilename', type = str , default = self.file, help = "Get the RDB file name")
 
-        return parser
+        args= parser.parse_args()
+
+        self.dir = args.dir
+
+        self.file = args.dbfilename
+
+        pass
         
 
 
@@ -52,9 +59,9 @@ class RedisDB:
 
         command_method = getattr(CommandExecutor, command.lower())
 
-        parsobj = self.arg_parser_init()
+        self.arg_parser_init()
 
-        resp = command_method(self, bulk_string_data, parsobj)
+        resp = command_method(self, bulk_string_data)
 
         return resp # send decoded string response
 

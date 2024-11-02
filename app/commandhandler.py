@@ -68,21 +68,18 @@ class CommandExecutor:
     @staticmethod
     def configget( *args) -> str:
 
-        _, req, parser_obj = args[0], args[1][2], args[2]
-
-        args= parser_obj.parse_args()
+        serevrobj, req = args[0], args[1][2], args[2]
 
         req_size = len(req)
 
         if req == "dir":
-            path = args.dir
+            path = serevrobj.dir
             path_size = len(path)
         
         elif req == "dbfilename":
-            path = args.dbfilename
+            path = serevrobj.dbfilename
             path_size = len(path)
 
-        
         resp = f"*2\r\n${req_size}\r\n{req}\r\n${path_size}\r\n{path}\r\n"
 
         return resp   
@@ -92,11 +89,9 @@ class CommandExecutor:
 
         obj, regex = args[0], args[1][1]
 
-        RdbHandler.parsekey(regex)
+        rdb_handler_obj = RdbHandler()
+
+        rdb_handler_obj.filehandler(obj, regex)
 
 
-
-# operation = Operation.ADD
-# method = getattr(Calculator, operation.name.lower())
-# result = method(2, 3
     
