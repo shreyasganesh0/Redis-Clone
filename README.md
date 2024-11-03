@@ -6,11 +6,58 @@ This is a starting point for
 ## Why did I build a redis clone?
 I built this project to get a complete understanding of Redis right from the socket calls of selectors at the OS level which Redis uses for asynchronous communication to the high level structuring and design best practices for writing a full fledged python project along with testing and and logging. Distributed systems is something that I am absoultely in love with and this project was made to take me one step closer to my goal of becoming a great backend developer.
 
-# Requirements
 
-1. Ensure you have `python (3.x)` installed locally
-1. Run `./your_program.sh` to run the Redis server, which is implemented in
-   `app/main.py`.
+## 📖 Usage
+
+Available Commands:
+
+* 'PING' - Ping the server
+* 'ECHO' - Echo a message to the server
+* 'GET' - get value stored in the Database associated with a given key
+* 'SET' - set value stored in the Database for a given key
+* 'CONFIGGET' - get the directory or the file name for the given RDB snapshot file
+* 'KEYS' - Read keys from the rdb file based on the regex provided
+
+## Examples
+
+Get the rdb file's directory
+
+```bash
+CONFIGGET --dir
+```
+
+Get key valeus from the rdb file
+
+```bash
+KEYS *
+```
+## 🤝 Contributing
+
+### Clone the repo
+
+```bash
+git clone https://github.com/shreyasganesh0/Redis-clone
+cd Redis-clone
+```
+
+
+### Run the project
+
+```bash
+./your_program.sh
+```
+
+### Run the tests
+
+local testing to be implmented once the project is stable
+
+```bash
+codecrafter test
+```
+
+### Submit a pull request
+
+If you'd like to contribute, please fork the repository and open a pull request to the `main` branch.
 
 # Troubleshooting
 
