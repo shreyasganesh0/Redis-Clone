@@ -1,7 +1,7 @@
 import re
 from typing import List
 import argparse
-from errorhandler.exceptions import InvalidRdbFileException, DynamicMethodNotFoundException
+from .errorhandler.exceptions import InvalidRdbFileException, DynamicMethodNotFoundException
 
 class RdbHandler:
 
@@ -36,7 +36,7 @@ class RdbHandler:
 
         pass
 
-    def rdb_file_parser(self, file_data) -> List[str]:
+    def rdb_file_parser(self) -> List[str]:
         
         version = self.valid_file()
         
@@ -75,10 +75,10 @@ class RdbHandler:
     
     def valid_file(self):
         
-        header = self.file_byte_data[:5].decode('ascii') 
-        version = self.file_byte_data[5:10].decode('ascii')
+        header = str(self.file_byte_data[:5],'utf-8')
+        version = str(self.file_byte_data[5:9],'utf-8')
 
-        self.position_in_file += 10
+        self.position_in_file = 9
 
         print(header, version)
 
