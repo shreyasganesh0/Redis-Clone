@@ -1,36 +1,16 @@
 [![progress-banner](https://backend.codecrafters.io/progress/redis/f0493a36-5fcd-4a1f-ad72-44c9d538c026)](https://app.codecrafters.io/users/codecrafters-bot?r=2qF)
 
-This is a starting point for Python solutions to the
-["Build Your Own Redis" Challenge](https://codecrafters.io/challenges/redis).
+This is a starting point for
+"Build Your Own Redis" 
 
-In this challenge, you'll build a toy Redis clone that's capable of handling
-basic commands like `PING`, `SET` and `GET`. Along the way we'll learn about
-event loops, the Redis protocol and more.
+## Why did I build a redis clone?
+I built this project to get a complete understanding of Redis right from the socket calls of selectors at the OS level which Redis uses for asynchronous communication to the high level structuring and design best practices for writing a full fledged python project along with testing and and logging. Distributed systems is something that I am absoultely in love with and this project was made to take me one step closer to my goal of becoming a great backend developer.
 
-**Note**: If you're viewing this repo on GitHub, head over to
-[codecrafters.io](https://codecrafters.io) to try the challenge.
-
-# Passing the first stage
-
-The entry point for your Redis implementation is in `app/main.py`. Study and
-uncomment the relevant code, and push your changes to pass the first stage:
-
-```sh
-git commit -am "pass 1st stage" # any msg
-git push origin master
-```
-
-That's all!
-
-# Stage 2 & beyond
-
-Note: This section is for stages 2 and beyond.
+# Requirements
 
 1. Ensure you have `python (3.x)` installed locally
-1. Run `./your_program.sh` to run your Redis server, which is implemented in
+1. Run `./your_program.sh` to run the Redis server, which is implemented in
    `app/main.py`.
-1. Commit your changes and run `git push origin master` to submit your solution
-   to CodeCrafters. Test output will be streamed to your terminal.
 
 # Troubleshooting
 
@@ -55,8 +35,5 @@ This is because `socket.create_server` was introduced in Python 3.8, and you
 might be running an older version.
 
 You can fix this by installing Python 3.8 locally and using that.
-
-If you'd like to use a different version of Python, change the `language_pack`
-value in `codecrafters.yml`.
 
 Adding link to the live document in which all learnings were updated as I coded this. ["Implementation detailed doc"](https://docs.google.com/document/d/e/2PACX-1vSqUDVC1HJPQDn1d9Vd936IpVp22T86iKh8bRbKiO4wUDwb1szyqD5fInpLv-6snrxo7TCcuKNbKudf/pub)
