@@ -6,7 +6,7 @@ from .errorhandler.exceptions import InvalidRdbFileException, DynamicMethodNotFo
 class RdbHandler:
 
     subsection_types_set: set = set([250,251,252,253,254,255])
-    subsections_values_dict: dict = {subsection:"" for subsection in [250,251,252,253,254,255]}
+    subsections_values_dict: dict = {subsection:{} for subsection in [250,251,252,253,254,255]}
     
     file_byte_data: bytes
     position_in_file: int = 0
@@ -104,28 +104,111 @@ class RdbHandler:
 
             if byte_val in self.subsection_types_set:
                 current_header_for_data = byte_val
+
                 self.position_in_file+=1
+                
             
             else:
+                print("curr byte header", current_header_for_data)
                 
+                if current_header_for_data == 251:
+                    print("In 251")
+                    size_no_expiry_hash_table = self.file_byte_data[self.position_in_file]
+                    self.subsections_values_dict[current_header_for_data]["no_expiry_dict_size"]=size_no_expiry_hash_table
+                    self.position_in_file +=1
 
-                length_of_bytes = self.length_encoding_decode()
+                    size_expiry_hash_table = self.file_byte_data[self.position_in_file]
+                    self.subsections_values_dict[current_header_for_data]["expiry_dict_size"]=size_expiry_hash_table
 
-                data = str(self.file_byte_data[self.position_in_file:self.position_in_file+length_of_bytes+1],'utf-8')
+                    self.position_in_file +=1
 
-                print("data ", data)
+                    continue
 
-                self.subsections_values_dict[current_header_for_data] += data+" "
+                elif current_header_for_data ==250:
 
-                self.position_in_file+=length_of_bytes+1
+                    
+                    print("In 250")
+                    length_of_bytes = self.length_encoding_decode()
+                    key = str(self.file_byte_data[self.position_in_file:self.position_in_file+length_of_bytes+1],'utf-8')
+                    print(key)
 
-                print(self.subsections_values_dict)
+                    self.subsections_values_dict[current_header_for_data][key]=""
+
+                    print("key", key)
+
+                    self.position_in_file+=length_of_bytes+1
+                    
+                    length_of_bytes= self.length_encoding_decode()
+
+                    data = str(self.file_byte_data[self.position_in_file:self.position_in_file+length_of_bytes+1],'utf-8')
+                    self.subsections_values_dict[current_header_for_data][key]=data
+                    
+                    self.position_in_file+=length_of_bytes+1
+                    continue
+
+                elif current_header_for_data == 255:
+
+                    print("In 255e")
+                    db_number_int = self.file_byte_data[self.position_in_file]
+                    self.subsections_values_dict[current_header_for_data] += db_number_int
+                    self.position_in_file+=1
+                    continue
+                
+                elif current_header_for_data == 254 and "time_expiry_seconds" not in self.subsections_values_dict[current_header_for_data]:
+                    print("In 254 ")
+                    time_expiry_seconds ="" 
+                    for i in range(4):
+                        time_expiry_seconds += str(self.file_byte_data[self.position_in_file])
+                        self.position_in_file+=1
+
+                    print("time", time_expiry_seconds)
+                    self.subsections_values_dict[current_header_for_data]["time_expiry_seconds"] = int(time_expiry_seconds)
+                    self.position_in_file+=1
+                    
+                    value_type = self.file_byte_data[self.position_in_file]
+                    self.subsections_values_dict[current_header_for_data]["value_type"]=value_type 
+
+                    continue
+                
+                elif current_header_for_data == 253 and "time_expiry_msecs" not in self.subsections_values_dict[current_header_for_data]:
+                    print("In 253")
+                    time_expiry_seconds = ""
+                    for i in range(8):
+                        time_expiry_seconds += str(self.file_byte_data[self.position_in_file])
+                        self.position_in_file+=1
+
+                    
+                    print("time", time_expiry_seconds)
+                    self.subsections_values_dict[current_header_for_data]["expiry_time_msec"] = int(time_expiry_seconds)
+                    self.position_in_file+=1
+                    value_type = self.file_byte_data[self.position_in_file]
 
 
+                    self.subsections_values_dict[current_header_for_data]["value_type"]=value_type
+                    self.position_in_file+=1
+                    continue
+
+                elif (current_header_for_data == 253 or current_header_for_data == 254 ) and self.subsections_values_dict[current_header_for_data]["value"] == 255:
+
+                    print("here for now")
+                    length_of_bytes = self.length_encoding_decode()
+                    key = str(self.file_byte_data[self.position_in_file:self.position_in_file+length_of_bytes+1],'utf-8')
 
 
+                    self.subsections_values_dict[current_header_for_data][key]=""
 
+                    print("data ", data)
 
+                    self.position_in_file+=length_of_bytes+1
+                    
+                    length_of_bytes= self.length_encoding_decode()
+
+                    data = str(self.file_byte_data[self.position_in_file:self.position_in_file+length_of_bytes+1],'utf-8')
+                    self.subsections_values_dict[current_header_for_data][key]=data
+
+                    self.position_in_file+=length_of_bytes+1
+
+            print(self.subsections_values_dict)
         return
 
     def length_encoding_decode(self):
@@ -174,7 +257,7 @@ class RdbHandler:
                     case 3:
                         self.position_in_file += 1
                         #clen follows might have to call this method again a little too complex to tackle for now will come back to this
-                        
+                length_of_data_in_bytes =length_of_integer_in_bits //8
 
         return length_of_data_in_bytes
         first_two_bits_as_int = int(first_two_bits_as_string, 2)
