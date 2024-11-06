@@ -43,18 +43,18 @@ class RdbHandler:
 
         pass
 
-    def rdb_file_parser(self) -> List[str]:
+    def rdb_file_parser(self) :
         
         version = self.valid_file()
         
         print("RDB version number ", version)
 
         self.split_subsections()
-
+        return
     
-    def filehandler(self, obj, regex) -> None:
+    def filehandler(self, obj ) -> None:
 
-        print(regex)
+  
         
         fpath = f'{obj.dir}/{obj.file}'
         print(fpath)
@@ -62,24 +62,15 @@ class RdbHandler:
         try:
             with open(fpath, 'rb') as f:
                
-               self.file_byte_data = f.read()
-               
-               value = self.rdb_file_parser()
-        
+                self.file_byte_data = f.read()
+                print(self.file_byte_data)
+                self.rdb_file_parser()
+
         except Exception as e:
             print ("File is empty",e)
 
-        return 
+        return
 
-    def stringparser(self, s: str) -> str:
-        pass
-
-    def intparser(self, s: str) -> str:
-        pass
-
-    def parsekeys(self, regex: str) -> str:
-        pass
-    
     def valid_file(self):
         
         header = str(self.file_byte_data[:5],'utf-8')
@@ -146,16 +137,16 @@ class RdbHandler:
                     self.position_in_file+=length_of_bytes+1
                     continue
 
-                elif current_header_for_data == 255:
+                elif current_header_for_data == 254:
 
-                    print("In 255e")
+                    print("In 254")
                     db_number_int = self.file_byte_data[self.position_in_file]
-                    self.subsections_values_dict[current_header_for_data] += db_number_int
+                    self.subsections_values_dict[current_header_for_data]["db_number"]= db_number_int
                     self.position_in_file+=1
                     continue
                 
-                elif current_header_for_data == 254 and "time_expiry_seconds" not in self.subsections_values_dict[current_header_for_data]:
-                    print("In 254 ")
+                elif current_header_for_data == 252 and "time_expiry_seconds" not in self.subsections_values_dict[current_header_for_data]:
+                    print("In 252 ")
                     time_expiry_seconds ="" 
                     for i in range(4):
                         time_expiry_seconds += str(self.file_byte_data[self.position_in_file])
@@ -168,6 +159,7 @@ class RdbHandler:
                     value_type = self.file_byte_data[self.position_in_file]
                     self.subsections_values_dict[current_header_for_data]["value_type"]=value_type 
 
+                    self.position_in_file+=1
                     continue
                 
                 elif current_header_for_data == 253 and "time_expiry_msecs" not in self.subsections_values_dict[current_header_for_data]:
@@ -188,7 +180,7 @@ class RdbHandler:
                     self.position_in_file+=1
                     continue
 
-                elif (current_header_for_data == 253 or current_header_for_data == 254 ) and self.subsections_values_dict[current_header_for_data]["value"] == 255:
+                elif (current_header_for_data == 253 or current_header_for_data == 252 ) and self.subsections_values_dict[current_header_for_data]["value_type"] == 255:
 
                     print("here for now")
                     length_of_bytes = self.length_encoding_decode()
@@ -207,9 +199,16 @@ class RdbHandler:
                     self.subsections_values_dict[current_header_for_data][key]=data
 
                     self.position_in_file+=length_of_bytes+1
-
+                elif current_header_for_data == 255:
+                    crc_checksum=""
+                    for i in range(8):
+                        crc_checksum += str(self.file_byte_data[self.position_in_file])
+                        self.position_in_file+=1
+                    self.subsections_values_dict[current_header_for_data]["crcchecksum"]=crc_checksum
+                    self.position_in_file+=1
+                    continue
             print(self.subsections_values_dict)
-        return
+        return 
 
     def length_encoding_decode(self):
         
@@ -225,9 +224,9 @@ class RdbHandler:
                 print(length_of_data_in_bytes,"length")
             
             case "01":
-                length_of_data_in_bytes = int(self.read_bits(number_of_bits= 6, option_for_sub_byte_parsing = True))
+                length_of_data_in_bytes = int(self.read_bits(number_of_bits= 6, option_for_sub_byte_parsing = True),2)
                 self.position_in_file+= 1
-                length_of_data_in_bytes = int(str(self.read_bits(number_of_bits= 8)))
+                length_of_data_in_bytes = int(self.read_bits(number_of_bits= 8),2)
 
             case "10":
                 print("in 10")

@@ -91,7 +91,11 @@ class CommandExecutor:
 
         rdb_handler_obj = RdbHandler()
 
-        rdb_handler_obj.filehandler(obj, regex)
+        rdb_obj=rdb_handler_obj.filehandler(obj)
+
+        print(rdb_obj.subsections_values_dict)
+
+
 
 
     
