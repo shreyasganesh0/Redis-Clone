@@ -68,16 +68,16 @@ class CommandExecutor:
     @staticmethod
     def configget( *args) -> str:
 
-        serevrobj, req = args[0], args[1][2], args[2]
+        serverobj, req = args[0], args[1][2]
 
         req_size = len(req)
 
         if req == "dir":
-            path = serevrobj.dir
+            path = serverobj.dir
             path_size = len(path)
         
         elif req == "dbfilename":
-            path = serevrobj.dbfilename
+            path = serverobj.dbfilename
             path_size = len(path)
 
         resp = f"*2\r\n${req_size}\r\n{req}\r\n${path_size}\r\n{path}\r\n"
@@ -91,11 +91,25 @@ class CommandExecutor:
 
         rdb_handler_obj = RdbHandler()
 
-        rdb_obj=rdb_handler_obj.filehandler(obj)
+        rdb_handler_obj.filehandler(obj)
 
-        print(rdb_obj.subsections_values_dict)
+        print("here in keys",rdb_handler_obj.subsections_values_dict)
 
+        total_key_val = {i:rdb_handler_obj.subsections_values_dict[i] for i in rdb_handler_obj.subsections_values_dict if i in set([253,252,"misc_kvs"])}
 
+        print(total_key_val)
+
+        resp=[]
+        for key in total_key_val.values():
+            for k in key:
+                if k == "value_type":
+                    continue
+                resp.append(k)
+        print(resp)
+        response=f"*{len(resp)}\r\n"
+        for i in resp:
+            response+=f"${len(i)}\r\n{i}\r\n"
+        return response    
 
 
     
