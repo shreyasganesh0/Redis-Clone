@@ -5,6 +5,7 @@ import asyncio
 from asyncio import events
 from .commandhandler import CommandExecutor
 import argparse
+from .rbdhandler import RdbHandler
 
 
 TIMEOUT=5000
@@ -32,6 +33,13 @@ class RedisDB:
 
         self.file = args.dbfilename
 
+        if self.file == 'dump.rdb':
+            pass
+
+
+        rdb_handler_obj = RdbHandler()
+
+        rdb_handler_obj.filehandler(self)
         pass
         
 
@@ -51,15 +59,19 @@ class RedisDB:
 
         command = bulk_string_data[0]
 
-        print(self.two_command)
+
         if command in self.two_command:
             command+=bulk_string_data[1]
         
         print(command)
 
+        
+
         command_method = getattr(CommandExecutor, command.lower())
 
         self.arg_parser_init()
+
+        print(self.kvstore,"kv")
 
         resp = command_method(self, bulk_string_data)
 

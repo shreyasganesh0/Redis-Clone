@@ -1,8 +1,9 @@
+import re
 #from abc import ABC, abstractmethod
 #from pydantic import BaseModel
 from enum import Enum
 from datetime import timedelta, timezone, datetime
-from .rbdhandler import RdbHandler
+
 
 
 
@@ -48,7 +49,7 @@ class CommandExecutor:
         obj, key = args[0], args[1][1]
 
         
-        val, timeout, time_insert = obj.kvstore.get(key, ["",10000000,0])
+        val, timeout, time_insert = obj.kvstore.get(key, ["",10000000,datetime.now(timezone.utc)])
 
         if timeout==-1:
             return f'${len(val)}\r\n{val}\r\n'
@@ -86,30 +87,18 @@ class CommandExecutor:
     
     @staticmethod
     def keys( *args):
+        print(args)
 
         obj, regex = args[0], args[1][1]
+        if regex == "*":
+            regex = "."+regex
+        print(regex)
+        reObj = re.compile(regex)
+        resp = []
 
-        rdb_handler_obj = RdbHandler()
-
-        rdb_handler_obj.filehandler(obj)
-
-        print("here in keys",rdb_handler_obj.subsections_values_dict)
-
-        total_key_val = {i:rdb_handler_obj.subsections_values_dict[i] for i in rdb_handler_obj.subsections_values_dict if i in set([253,252,"misc_kvs"])}
-
-        print(total_key_val)
-
-        resp=[]
-        for key in total_key_val.values():
-            for k in key:
-                if k == "value_type":
-                    continue
-                resp.append(k)
+        for key in obj.kvstore:
+                print(key)
+                if(reObj.match(key)):
+                    resp.append(f'${len(key)}\r\n{key}\r\n')
         print(resp)
-        response=f"*{len(resp)}\r\n"
-        for i in resp:
-            response+=f"${len(i)}\r\n{i}\r\n"
-        return response    
-
-
-    
+        return f"*{len(resp)}\r\n"+"".join(resp)

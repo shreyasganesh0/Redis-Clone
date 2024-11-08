@@ -1,3 +1,5 @@
+
+from .commandhandler import CommandExecutor
 import re
 from typing import List
 import argparse
@@ -54,7 +56,6 @@ class RdbHandler:
     
     def filehandler(self, obj ) -> None:
 
-  
         
         fpath = f'{obj.dir}/{obj.file}'
         print(fpath)
@@ -65,6 +66,7 @@ class RdbHandler:
                 self.file_byte_data = f.read()
                 print(self.file_byte_data)
                 self.rdb_file_parser()
+                self.set_rdb_keys(obj)
 
         except Exception as e:
             print ("File is empty",e)
@@ -288,16 +290,43 @@ class RdbHandler:
 
         return length_of_data_in_bytes
         first_two_bits_as_int = int(first_two_bits_as_string, 2)
-
     
 
+    def set_rdb_keys(self, redis_obj):
+        
 
+        print("here in keys",self.subsections_values_dict)
 
+        total_key_val = {i:self.subsections_values_dict[i] for i in self.subsections_values_dict if i in set([253,252,"misc_kvs"])}
 
+        print(total_key_val)
 
+        command = CommandExecutor()
+        resp=[]
+        for key in total_key_val:
+            if key == 252:
+                for kvs in total_key_val[key]:
+                    if kvs == "time_expiry_seconds":
+                        exp_time = total_key_val[key][kvs]*1000
 
+                    elif kvs == "value_type":
+                        continue
+                    else:
+                        command.set(redis_obj, (0,kvs, total_key_val[key][kvs],exp_time))
+            elif key == 253:
+                for kvs in total_key_val[key]:
+                    if kvs == "time_expiry_msec":
+                        exp_time = total_key_val[key][kvs]
 
+                    elif kvs == "value_type":
+                        continue
+                    else:
+                        command.set(redis_obj, (0,kvs, total_key_val[key][kvs],exp_time))
+            
+            else:
+                for kvs in total_key_val[key]:
 
-
-
-
+                    if kvs == "value_type":
+                        continue
+                    else:
+                        command.set(redis_obj, (0,kvs, total_key_val[key][kvs]))
