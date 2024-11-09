@@ -1,5 +1,6 @@
 
 from .commandhandler import CommandExecutor
+import struct
 import re
 from typing import List
 import argparse
@@ -93,7 +94,7 @@ class RdbHandler:
         
             byte_val =self.file_byte_data[self.position_in_file]
 
-            print(byte_val)
+            print(byte_val,'byte val curr')
 
             if byte_val in self.subsection_types_set:
                 current_header_for_data = byte_val
@@ -116,63 +117,80 @@ class RdbHandler:
                     self.position_in_file +=1
                     print(self.subsections_values_dict[current_header_for_data]["expiry_dict_size"]," exp")
                     print(self.subsections_values_dict[current_header_for_data]["no_expiry_dict_size"],"no exp")
-                    if  self.subsections_values_dict[current_header_for_data]["expiry_dict_size"] > 0:
-                        self.subsections_values_dict[current_header_for_data]["expiry_dict_size"]-=1   
-                        if current_header_for_data == 252 and "time_expiry_seconds" not in self.subsections_values_dict[current_header_for_data]:
-                            print("In 252 ")
-                            time_expiry_seconds ="" 
-                            for i in range(4):
-                                time_expiry_seconds += str(self.file_byte_data[self.position_in_file])
-                                self.position_in_file+=1
+                    continue
 
-                            print("time", time_expiry_seconds)
-                            self.subsections_values_dict[current_header_for_data]["time_expiry_seconds"] = int(time_expiry_seconds)
-                            self.position_in_file+=1
-                            
-                            value_type = self.file_byte_data[self.position_in_file]
-                            self.subsections_values_dict[current_header_for_data]["value_type"]=value_type 
-
-                            self.position_in_file+=1
-                            continue
+                elif current_header_for_data == 252 or current_header_for_data == 253:
+                    if  self.subsections_values_dict[251]["expiry_dict_size"] > 0:
+                        self.subsections_values_dict[251]["expiry_dict_size"]-=1
                         
-                        elif current_header_for_data == 253 and "time_expiry_msecs" not in self.subsections_values_dict[current_header_for_data]:
-                            print("In 253")
-                            time_expiry_seconds = ""
-                            for i in range(8):
-                                time_expiry_seconds += str(self.file_byte_data[self.position_in_file])
-                                self.position_in_file+=1
-
+                        print("in the expiry")
+                        print(current_header_for_data,"curr head")
+                        
+                        if current_header_for_data == 252:
+                            print("In 252 ",self.file_byte_data[self.position_in_file:self.position_in_file+8])
                             
+                            time_expiry_seconds = struct.unpack('<Q', self.file_byte_data[self.position_in_file:self.position_in_file+9])[0]
+                            self.position_in_file+=8
+                            print(self.file_byte_data[self.position_in_file])
+                            #time_expiry_seconds = int.from_bytes(time_expiry_seconds, byteorder='little', signed=False)
+
                             print("time", time_expiry_seconds)
-                            self.subsections_values_dict[current_header_for_data]["expiry_time_msec"] = int(time_expiry_seconds)
-                            self.position_in_file+=1
+                            
                             value_type = self.file_byte_data[self.position_in_file]
 
 
-                            self.subsections_values_dict[current_header_for_data]["value_type"]=value_type
                             self.position_in_file+=1
-                            continue
-
-                        elif (current_header_for_data == 253 or current_header_for_data == 252 ) and self.subsections_values_dict[current_header_for_data]["value_type"] == 255:
-
+        
                             print("here for now")
                             length_of_bytes = self.length_encoding_decode()
                             key = str(self.file_byte_data[self.position_in_file+1:self.position_in_file+length_of_bytes+1],'utf-8')
 
 
-                            self.subsections_values_dict[current_header_for_data][key]=""
+                            self.subsections_values_dict[current_header_for_data][(key,time_expiry_seconds,value_type)]=""
 
-                            print("data ", data)
+                            print("key", key)
 
                             self.position_in_file+=length_of_bytes+1
                             
                             length_of_bytes= self.length_encoding_decode()
 
                             data = str(self.file_byte_data[self.position_in_file+1:self.position_in_file+length_of_bytes+1],'utf-8')
-                            self.subsections_values_dict[current_header_for_data][key]=data
+                            self.subsections_values_dict[current_header_for_data][(key,time_expiry_seconds,value_type)]=data
+                            print("data", data)
+                            self.position_in_file+=length_of_bytes+1
+                        
+                        elif current_header_for_data == 253:
+                            print("In 253")
+                            time_expiry_seconds = self.file_byte_data[self.position_in_file:self.position_in_file+5]
+                            self.position_in_file +=4
+
+                            
+                            time_expiry_seconds = int.from_bytes(time_expiry_seconds, byteorder='little', signed=False)
+                            print("time", time_expiry_seconds)
+
+                            value_type = self.file_byte_data[self.position_in_file]
+
+                            self.position_in_file+=1
+                            
+
+                            print("here for now")
+                            length_of_bytes = self.length_encoding_decode()
+                            key = str(self.file_byte_data[self.position_in_file+1:self.position_in_file+length_of_bytes+1],'utf-8')
+
+
+                            self.subsections_values_dict[current_header_for_data][(key, time_expiry_seconds,value_type)]=""
+
+                            print("key ", key)
 
                             self.position_in_file+=length_of_bytes+1
-                            continue
+                            
+                            length_of_bytes= self.length_encoding_decode()
+
+                            data = str(self.file_byte_data[self.position_in_file+1:self.position_in_file+length_of_bytes+1],'utf-8')
+                            self.subsections_values_dict[current_header_for_data][(key,time_expiry_seconds, value_type)]=data
+
+                            self.position_in_file+=length_of_bytes+1
+
                     else:
                         print("in the no expiry")
                         count = self.subsections_values_dict[current_header_for_data]["no_expiry_dict_size"] 
@@ -200,9 +218,9 @@ class RdbHandler:
                             self.position_in_file+=length_of_bytes+2
                             count-=1
                         current_header_for_data = self.file_byte_data[self.position_in_file-1]
+
                 elif current_header_for_data ==250:
 
-                    
                     print("In 250")
                     length_of_bytes = self.length_encoding_decode()
                     key = str(self.file_byte_data[self.position_in_file+1:self.position_in_file+length_of_bytes+1],'utf-8')
@@ -307,22 +325,13 @@ class RdbHandler:
         for key in total_key_val:
             if key == 252:
                 for kvs in total_key_val[key]:
-                    if kvs == "time_expiry_seconds":
-                        exp_time = total_key_val[key][kvs]*1000
+                    
 
-                    elif kvs == "value_type":
-                        continue
-                    else:
-                        command.set(redis_obj, (0,kvs, total_key_val[key][kvs],exp_time))
+                    command.set(redis_obj, (0,kvs[0], total_key_val[key][kvs],0,kvs[1]*1000))
             elif key == 253:
                 for kvs in total_key_val[key]:
-                    if kvs == "time_expiry_msec":
-                        exp_time = total_key_val[key][kvs]
 
-                    elif kvs == "value_type":
-                        continue
-                    else:
-                        command.set(redis_obj, (0,kvs, total_key_val[key][kvs],exp_time))
+                    command.set(redis_obj, (0,kvs[0], total_key_val[key][kvs],0,kvs[1]))
             
             else:
                 for kvs in total_key_val[key]:

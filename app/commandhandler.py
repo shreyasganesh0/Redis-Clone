@@ -49,12 +49,13 @@ class CommandExecutor:
         obj, key = args[0], args[1][1]
 
         
-        val, timeout, time_insert = obj.kvstore.get(key, ["",10000000,datetime.now(timezone.utc)])
+        val, timeout, time_insert = obj.kvstore.get(key, ["",10000000,timedelta(0)])
 
+        print(f"in setter {timedelta(milliseconds=int(timeout))},{datetime.now(timezone.utc)-time_insert}")
         if timeout==-1:
             return f'${len(val)}\r\n{val}\r\n'
        
-        if datetime.now(timezone.utc)-time_insert > timedelta(milliseconds=int(timeout)):
+        elif datetime.now(timezone.utc)-time_insert > timedelta(milliseconds=int(timeout)):
             del obj.kvstore[key]
             val=""
 
