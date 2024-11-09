@@ -197,8 +197,9 @@ class RdbHandler:
                             data = str(self.file_byte_data[self.position_in_file+1:self.position_in_file+length_of_bytes+1],'utf-8')
                             self.subsections_values_dict[current_header_for_data][key]=data
 
-                            self.position_in_file+=length_of_bytes+1
+                            self.position_in_file+=length_of_bytes+2
                             count-=1
+                        current_header_for_data = self.file_byte_data[self.position_in_file-1]
                 elif current_header_for_data ==250:
 
                     
