@@ -37,7 +37,7 @@ class CommandExecutor:
             flag = True
             obj, key, value, timeout = args[0], args[1][1], args[1][2], args[1][4]
         
-        obj.kvstore[key] = (value,timeout,datetime.now(timezone.utc))
+        obj.kvstore[key] = (value,int(timeout),int(datetime.now(timezone.utc).timestamp()*1000))
 
         print(obj.kvstore)
         
@@ -49,18 +49,19 @@ class CommandExecutor:
         obj, key = args[0], args[1][1]
 
         
-        val, timeout, time_insert = obj.kvstore.get(key, ["",10000000,timedelta(0)])
+        val, timeout, time_insert = obj.kvstore.get(key, ["",int(datetime.now(timezone.utc).timestamp()*1000)+10000000,0])
 
-        print(f"in setter {timedelta(milliseconds=int(timeout))},{datetime.now(timezone.utc)-time_insert}")
+        print(int(datetime.now(timezone.utc).timestamp()*1000)-time_insert, timeout, "checking set")
+       
         if timeout==-1:
             return f'${len(val)}\r\n{val}\r\n'
        
-        elif datetime.now(timezone.utc)-time_insert > timedelta(milliseconds=int(timeout)):
+        if int(datetime.now(timezone.utc).timestamp()*1000)-time_insert >= timeout:
             del obj.kvstore[key]
             val=""
 
         if val=="":
-            print("here")
+            print("here val is null")
             resp = "$-1\r\n"
         else:
             resp = f'${len(val)}\r\n{val}\r\n'

@@ -1,4 +1,5 @@
 
+from datetime import datetime, timedelta, timezone
 from .commandhandler import CommandExecutor
 import struct
 import re
@@ -22,13 +23,10 @@ class RdbHandler:
     
         byte_val = self.file_byte_data[self.position_in_file]
 
-        print(byte_val,"byte", type(byte_val))
-
         bits_list =[]
 
         if option_for_sub_byte_parsing:
             for i in range(6,-1,-1):
-                print("here bitspar")
                 bits_list.append( str((byte_val >> (i)) & 1))
         else:
             for i in range(8,6,-1):
@@ -89,6 +87,7 @@ class RdbHandler:
         return version
     
     def split_subsections(self) -> list:
+        skip_to_no_expiry = False
 
         while self.position_in_file <len(self.file_byte_data):
         
@@ -96,14 +95,17 @@ class RdbHandler:
 
             print(byte_val,'byte val curr')
 
-            if byte_val in self.subsection_types_set:
+            if byte_val in self.subsection_types_set: 
                 current_header_for_data = byte_val
 
                 self.position_in_file+=1
-                
+                   
             
             else:
+                if skip_to_no_expiry:
+                    current_header_for_data = "misc_kvs"
                 print("curr byte header", current_header_for_data)
+                 
                 
                 if current_header_for_data == 251:
                     print("In 251")
@@ -117,9 +119,11 @@ class RdbHandler:
                     self.position_in_file +=1
                     print(self.subsections_values_dict[current_header_for_data]["expiry_dict_size"]," exp")
                     print(self.subsections_values_dict[current_header_for_data]["no_expiry_dict_size"],"no exp")
-                    continue
+                    if self.subsections_values_dict[current_header_for_data]['expiry_dict_size']==0 and self.subsections_values_dict[current_header_for_data]["no_expiry_dict_size"] >0:
+                        skip_to_no_expiry =True                                                                                
+                    
 
-                elif current_header_for_data == 252 or current_header_for_data == 253:
+                elif current_header_for_data == 252 or current_header_for_data == 253 or current_header_for_data == "misc_kvs":
                     if  self.subsections_values_dict[251]["expiry_dict_size"] > 0:
                         self.subsections_values_dict[251]["expiry_dict_size"]-=1
                         
@@ -129,7 +133,7 @@ class RdbHandler:
                         if current_header_for_data == 252:
                             print("In 252 ",self.file_byte_data[self.position_in_file:self.position_in_file+8])
                             
-                            time_expiry_seconds = struct.unpack('<Q', self.file_byte_data[self.position_in_file:self.position_in_file+9])[0]
+                            time_expiry_seconds = int.from_bytes(self.file_byte_data[self.position_in_file:self.position_in_file+9],byteorder='little',signed= False) 
                             self.position_in_file+=8
                             print(self.file_byte_data[self.position_in_file])
                             #time_expiry_seconds = int.from_bytes(time_expiry_seconds, byteorder='little', signed=False)
@@ -193,7 +197,7 @@ class RdbHandler:
 
                     else:
                         print("in the no expiry")
-                        count = self.subsections_values_dict[current_header_for_data]["no_expiry_dict_size"] 
+                        count = self.subsections_values_dict[251]["no_expiry_dict_size"] 
                         current_header_for_data="misc_kvs" 
                         value_type = self.file_byte_data[self.position_in_file]
                         self.subsections_values_dict[current_header_for_data]["value_type"]=value_type
@@ -206,7 +210,7 @@ class RdbHandler:
 
                             self.subsections_values_dict[current_header_for_data][key]=""
 
-                            print("data ", data)
+                            print("key",key)
 
                             self.position_in_file+=length_of_bytes+1
                             
@@ -215,9 +219,12 @@ class RdbHandler:
                             data = str(self.file_byte_data[self.position_in_file+1:self.position_in_file+length_of_bytes+1],'utf-8')
                             self.subsections_values_dict[current_header_for_data][key]=data
 
+                            print("data ", data)
                             self.position_in_file+=length_of_bytes+2
                             count-=1
-                        current_header_for_data = self.file_byte_data[self.position_in_file-1]
+                        skip_to_no_expiry =False
+                        self.position_in_file-=1
+                        print(self.file_byte_data[self.position_in_file-1],"exit val")
 
                 elif current_header_for_data ==250:
 
@@ -239,7 +246,6 @@ class RdbHandler:
                     self.subsections_values_dict[current_header_for_data][key]=data
                     
                     self.position_in_file+=length_of_bytes+1
-                    continue
 
                 elif current_header_for_data == 254:
 
@@ -249,12 +255,13 @@ class RdbHandler:
                     self.position_in_file+=1
                     continue
                 elif current_header_for_data == 255:
+                    print("in 255")
                     crc_checksum=""
                     for i in range(8):
                         crc_checksum += str(self.file_byte_data[self.position_in_file])
                         self.position_in_file+=1
                     self.subsections_values_dict[current_header_for_data]["crcchecksum"]=crc_checksum
-                    self.position_in_file+=1
+                    self.position_in_file+=2
                     continue
             print(self.subsections_values_dict)
         return 
@@ -268,9 +275,8 @@ class RdbHandler:
         match first_two_bits_as_string:
 
             case "00":
-                print("in 00")
                 length_of_data_in_bytes = int(self.read_bits(number_of_bits = 6, option_for_sub_byte_parsing = True),2)
-                print(length_of_data_in_bytes,"length")
+               
             
             case "01":
                 length_of_data_in_bytes = int(self.read_bits(number_of_bits= 6, option_for_sub_byte_parsing = True),2)
@@ -325,13 +331,13 @@ class RdbHandler:
         for key in total_key_val:
             if key == 252:
                 for kvs in total_key_val[key]:
-                    
 
-                    command.set(redis_obj, (0,kvs[0], total_key_val[key][kvs],0,kvs[1]*1000))
+                    command.set(redis_obj, (0,kvs[0], total_key_val[key][kvs],0,(kvs[1])-int(datetime.now(timezone.utc).timestamp()*1000)))
             elif key == 253:
                 for kvs in total_key_val[key]:
 
-                    command.set(redis_obj, (0,kvs[0], total_key_val[key][kvs],0,kvs[1]))
+                    command.set(redis_obj, (0,kvs[0], total_key_val[key][kvs],0,kvs[1]-int(datetime.now(timezone.utc).timestamp()*1000)))
+
             
             else:
                 for kvs in total_key_val[key]:
