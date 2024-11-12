@@ -18,7 +18,7 @@ class RedisDB:
     dir: str = "tmp/redis-files"
     file: str = "dump.rdb"
     port: int = 6379
-
+    replicaof: str ="ismaster"
 
     def arg_parser_init(self) -> None:
 
@@ -30,6 +30,8 @@ class RedisDB:
 
         parser.add_argument('--port', type = int, default = self.port, help = "Get the server port number")
 
+        parser.add_argument('--replicaof', type = str, default = self.replicaof, help = "If flag is mentioned specifies <Master-host><Master-port>")
+
         args= parser.parse_args()
 
         self.dir = args.dir
@@ -38,6 +40,7 @@ class RedisDB:
 
         self.port = args.port
         
+        self.replicaof = args.replicaof
 
     def rdb_load(self):
         if self.file == 'dump.rdb':

@@ -112,6 +112,6 @@ class CommandExecutor:
         if param != None:
             match(param):
                 case "replication":
-                    role = "master"
+                    role = "master" if obj.replicaof == "ismaster" else "slave"
                     resp = f"${len(role)+5}\r\nrole:{role}\r\n"
         return resp
