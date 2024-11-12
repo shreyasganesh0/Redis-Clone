@@ -104,3 +104,14 @@ class CommandExecutor:
                     resp.append(f'${len(key)}\r\n{key}\r\n')
         print(resp)
         return f"*{len(resp)}\r\n"+"".join(resp)
+
+    @staticmethod
+    def info( *args):
+        obj, param = args[0], args[1][1]
+
+        if param != None:
+            match(param):
+                case "replication":
+                    role = "master"
+                    resp = f"${len(role)+5}\r\nrole:{role}\r\n"
+        return resp
