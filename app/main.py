@@ -17,6 +17,7 @@ class RedisDB:
     two_command: set = set({"CONFIG"})
     dir: str = "tmp/redis-files"
     file: str = "dump.rdb"
+    port: int = 6379
 
 
     def arg_parser_init(self) -> None:
@@ -27,16 +28,20 @@ class RedisDB:
         
         parser.add_argument('--dbfilename', type = str , default = self.file, help = "Get the RDB file name")
 
+        parser.add_argument('--port', type = int, default = self.port, help = "Get the server port number")
+
         args= parser.parse_args()
 
         self.dir = args.dir
 
         self.file = args.dbfilename
 
+        self.port = args.port
+        
+
+    def rdb_load(self):
         if self.file == 'dump.rdb':
             pass
-
-
         rdb_handler_obj = RdbHandler()
 
         rdb_handler_obj.filehandler(self)
@@ -65,11 +70,9 @@ class RedisDB:
         
         print(command)
 
-        
-
         command_method = getattr(CommandExecutor, command.lower())
 
-        self.arg_parser_init()
+        self.rdb_load()
 
         print(self.kvstore,"kv")
 
@@ -98,8 +101,10 @@ class RedisDB:
     async def main(self):
         # You can use print statements as follows for debugging, they'll be visible when running tests.
         print("Logs from your program will appear here!")
+        
+        self.arg_parser_init()
 
-        server = await asyncio.start_server(self.client_req_resp,"localhost", 6379)
+        server = await asyncio.start_server(self.client_req_resp,"localhost", self.port)
         
         async with server:
             await server.serve_forever()
