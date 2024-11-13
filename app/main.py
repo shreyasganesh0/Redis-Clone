@@ -1,4 +1,7 @@
 import socket  # noqa: F401
+import secrets
+import string
+
 import threading
 import concurrent.futures
 import asyncio
@@ -19,7 +22,14 @@ class RedisDB:
     file: str = "dump.rdb"
     port: int = 6379
     replicaof: str ="ismaster"
+    master_replid: str
+    master_offset: int = 0
 
+    def generate_replid(self, length=40):
+        alphabet = string.ascii_letters + string.digits
+        self.master_replid =''.join(secrets.choice(alphabet) for _ in range(length))   
+        pass
+    
     def arg_parser_init(self) -> None:
 
         parser= argparse.ArgumentParser(description = "Parse command line args for testing")
@@ -41,6 +51,7 @@ class RedisDB:
         self.port = args.port
         
         self.replicaof = args.replicaof
+        pass 
 
     def rdb_load(self):
         if self.file == 'dump.rdb':
@@ -50,8 +61,6 @@ class RedisDB:
         rdb_handler_obj.filehandler(self)
         pass
         
-
-
     def parse_input(self, data: bytearray) -> str:
         print("data received is ",data)
         
@@ -106,7 +115,7 @@ class RedisDB:
         print("Logs from your program will appear here!")
         
         self.arg_parser_init()
-
+        self.generate_replid(40) 
         server = await asyncio.start_server(self.client_req_resp,"localhost", self.port)
         
         async with server:

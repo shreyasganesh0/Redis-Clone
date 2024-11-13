@@ -17,6 +17,7 @@ Available Commands:
 * 'SET' - set value stored in the Database for a given key
 * 'CONFIGGET' - get the directory or the file name for the given RDB snapshot file
 * 'KEYS' - Read keys from the rdb file based on the regex provided
+* 'INFO' - Gives the info of the specified parameter (works for "--replication" for now)
 
 ## Examples
 
