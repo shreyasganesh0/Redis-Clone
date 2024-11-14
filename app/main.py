@@ -15,7 +15,7 @@ TIMEOUT=5000
 
 class RedisDB:
 
-    
+    host: str = "localhost"    
     kvstore: dict = {}
     two_command: set = set({"CONFIG"})
     dir: str = "tmp/redis-files"
@@ -23,11 +23,12 @@ class RedisDB:
     port: int = 6379
     replicaof: str ="ismaster"
     master_replid: str
-    master_offset: int = 0
+    master_offset: int
 
-    def generate_replid(self, length=40):
+    def init_master(self, length=40):
         alphabet = string.ascii_letters + string.digits
-        self.master_replid =''.join(secrets.choice(alphabet) for _ in range(length))   
+        self.master_replid =''.join(secrets.choice(alphabet) for _ in range(length))
+        self.master_offset = 0
         pass
     
     def arg_parser_init(self) -> None:
@@ -40,7 +41,7 @@ class RedisDB:
 
         parser.add_argument('--port', type = int, default = self.port, help = "Get the server port number")
 
-        parser.add_argument('--replicaof', type = str, default = self.replicaof, help = "If flag is mentioned specifies <Master-host><Master-port>")
+        parser.add_argument('--replicaof', type = str, default = self.replicaof, help = "If flag is mentioned specifies <Master-host> <Master-port>")
 
         args= parser.parse_args()
 
@@ -91,32 +92,65 @@ class RedisDB:
         resp = command_method(self, bulk_string_data)
 
         return resp # send decoded string response
+    async def replica_handshake(self):
 
-    async def client_req_resp(self, reader, writer) -> None:
-        while True:
-
-            data_input = await asyncio.wait_for(reader.read(2048), timeout=TIMEOUT) # read the data from the client
-
-            if not data_input:
-                break
+        print("here")
+        try:
+            master_host, master_port = self.replicaof.split(" ")                  
+            resp = f"*1\r\n$4\r\nPING\r\n"
+            reader, writer = await asyncio.open_connection(master_host,master_port)
             
-            resp=''
-            resp = self.parse_input(data_input)
             
             resp = resp.encode()
+            await writer.write(resp)
+            response = await reader.read(100)
+            print(f"Received response: {response.decode().strip()}")
+            
+            # Close the connection
+            writer.close()
+            await writer.wait_closed()
+        except Exception as e:
+            print(f"Error during handshake: {e}")
 
-            writer.write(resp) # reply to the client with pong (hardcoded for now)
-        writer.close
 
+    async def client_req_resp(self, reader, writer) -> None:
 
+        while True:
+            print("here in client")
+            
+            try:
+                data_input = await asyncio.wait_for(reader.read(2048), timeout=TIMEOUT) # read the data from the client
+
+                if not data_input:
+                    break
+                
+                resp=''
+                resp = self.parse_input(data_input)
+                
+                resp = resp.encode()
+
+                writer.write(resp) # reply to the client with pong (hardcoded for now)
+            except asyncio.TimeoutError:
+                print("Client request timeout.")
+                break
+            except Exception as e:
+                print(f"Error: {e}")
+                break
+        writer.close()
+        await writer.wait_closed()
 
     async def main(self):
         # You can use print statements as follows for debugging, they'll be visible when running tests.
         print("Logs from your program will appear here!")
         
         self.arg_parser_init()
-        self.generate_replid(40) 
-        server = await asyncio.start_server(self.client_req_resp,"localhost", self.port)
+        if self.replicaof == "ismaster":
+            self.init_master(40)
+        else:
+            print("here in client")
+            await self.replica_handshake()
+        print(self.host,self.port)
+        server = await asyncio.start_server(self.client_req_resp,self.host, self.port)
         
         async with server:
             await server.serve_forever()

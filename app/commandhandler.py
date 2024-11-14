@@ -113,7 +113,11 @@ class CommandExecutor:
             match(param):
                 case "replication":
                     role = "master" if obj.replicaof == "ismaster" else "slave"
-                    master_replid = obj.master_replid
-                    master_offset = obj.master_offset
-                    resp = f"${len(role)+5+len(master_replid)+14+20+2+2}\r\nrole:{role}\r\nmaster_replid:{master_replid}\r\nmaster_repl_offset:{master_offset}\r\n"
+
+                    if obj.replicaof == "ismaster": 
+                        master_replid = obj.master_replid
+                        master_offset = obj.master_offset
+                        resp = f"${len(role)+5+len(master_replid)+14+20+2+2}\r\nrole:{role}\r\nmaster_replid:{master_replid}\r\nmaster_repl_offset:{master_offset}\r\n"
+                    else:
+                        resp = f"${len(role)+5}\r\nrole:{role}\r\n" 
         return resp
