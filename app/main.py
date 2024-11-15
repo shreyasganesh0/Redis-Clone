@@ -102,10 +102,22 @@ class RedisDB:
             
             
             resp = resp.encode()
-            await writer.write(resp)
+            writer.write(resp)
+
             response = await reader.read(100)
             print(f"Received response: {response.decode().strip()}")
-            
+
+            replconf1 = f"*3\r\n$8\r\nREPLCONF\r\n$14\r\nlistening-port\r\n${len(str(self.port))}\r\n{self.port}\r\n"
+            replconf2 = f"*3\r\n$8\r\nREPLCONF\r\n$4\r\ncapa\r\n$6\r\npsync2\r\n"
+
+            writer.write(replconf1.encode()) 
+            response = await reader.read(100)
+            print(f"Received response: {response.decode().strip()}")
+
+            writer.write(replconf2.encode()) 
+            response = await reader.read(100)
+            print(f"Received response: {response.decode().strip()}")
+
             # Close the connection
             writer.close()
             await writer.wait_closed()
