@@ -118,6 +118,14 @@ class RedisDB:
             response = await reader.read(100)
             print(f"Received response: {response.decode().strip()}")
 
+            master_replid = "?"
+            master_offset = "-1"
+            psync = f"*3\r\n$5\r\nPSYNC\r\n${len(master_replid)}\r\n{master_replid}\r\n${len(master_offset)}\r\n{master_offset}\r\n"
+
+            writer.write(psync.encode()) 
+            response = await reader.read(100)
+            print(f"Received response: {response.decode().strip()}")
+
             # Close the connection
             writer.close()
             await writer.wait_closed()
