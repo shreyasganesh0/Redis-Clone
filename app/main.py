@@ -24,7 +24,8 @@ class RedisDB:
     replicaof: str ="ismaster"
     master_replid: str
     master_offset: int
-
+    replicas_list: list =[]
+    replica_capabilities_list: dict ={}
     def init_master(self, length=40):
         alphabet = string.ascii_letters + string.digits
         self.master_replid =''.join(secrets.choice(alphabet) for _ in range(length))
@@ -92,6 +93,7 @@ class RedisDB:
         resp = command_method(self, bulk_string_data)
 
         return resp # send decoded string response
+    
     async def replica_handshake(self):
 
         print("here")

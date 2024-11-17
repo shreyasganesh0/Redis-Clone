@@ -3,6 +3,7 @@ import re
 #from pydantic import BaseModel
 from enum import Enum
 from datetime import timedelta, timezone, datetime
+from .errorhandler.exceptions import ReplConfException
 
 
 
@@ -120,4 +121,19 @@ class CommandExecutor:
                         resp = f"${len(role)+5+len(master_replid)+14+20+2+2}\r\nrole:{role}\r\nmaster_replid:{master_replid}\r\nmaster_repl_offset:{master_offset}\r\n"
                     else:
                         resp = f"${len(role)+5}\r\nrole:{role}\r\n" 
+        return resp
+    
+    @staticmethod
+    def replconf( *args):
+        print("here in repl")
+        obj = args[0]
+        resp = ""
+        if args[1][1] == "listening-port":
+            obj.replicas_list.append(args[1][2])
+            resp = "+OK\r\n"
+        elif args[1][1] == "capa":
+            obj.replica_capabilities_list[obj.replicas_list[-1]] = args[1][2]
+            resp = "+OK\r\n"
+        else:
+            raise ReplConfException()
         return resp
