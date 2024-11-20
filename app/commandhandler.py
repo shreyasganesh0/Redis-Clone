@@ -143,5 +143,7 @@ class CommandExecutor:
         obj = args[0]
         master_offset = obj.master_offset
         master_replid = obj.master_replid
+       
         resp = f"+FULLRESYNC {master_replid} {master_offset}\r\n"
         return resp
+    

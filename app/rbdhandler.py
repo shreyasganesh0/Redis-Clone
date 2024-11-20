@@ -57,7 +57,6 @@ class RdbHandler:
 
         
         fpath = f'{obj.dir}/{obj.file}'
-        print(fpath)
 
         try:
             with open(fpath, 'rb') as f:
@@ -314,7 +313,6 @@ class RdbHandler:
                 length_of_data_in_bytes =length_of_integer_in_bits //8
 
         return length_of_data_in_bytes
-        first_two_bits_as_int = int(first_two_bits_as_string, 2)
     
 
     def set_rdb_keys(self, redis_obj):
@@ -336,7 +334,7 @@ class RdbHandler:
             elif key == 253:
                 for kvs in total_key_val[key]:
 
-                    command.set(redis_obj, (0,kvs[0], total_key_val[key][kvs],0,kvs[1]-int(datetime.now(timezone.utc).timestamp()*1000)))
+                    command.set(redis_obj, (0,kvs[0], total_key_val[key][kvs],0,kvs[1]-int(datetime.now(timezone.utc).timestamp())))
 
             
             else:

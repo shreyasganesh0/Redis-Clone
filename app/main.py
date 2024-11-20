@@ -18,7 +18,7 @@ class RedisDB:
     host: str = "localhost"    
     kvstore: dict = {}
     two_command: set = set({"CONFIG"})
-    dir: str = "tmp/redis-files"
+    dir: str = "app/tmp/redis-files"
     file: str = "dump.rdb"
     port: int = 6379
     replicaof: str ="ismaster"
@@ -70,8 +70,6 @@ class RedisDB:
         
         data_list = data.decode().split("\r\n") 
 
-        bulk_string_count = data_list[0][1]
-
         bulk_string_data = [data_list[i] for i in range(1,len(data_list)) if i%2==0] #parses the data and stores only the bulk strings
 
         print(bulk_string_data)
@@ -87,8 +85,6 @@ class RedisDB:
         command_method = getattr(CommandExecutor, command.lower())
 
         self.rdb_load()
-
-        print(self.kvstore,"kv")
 
         resp = command_method(self, bulk_string_data)
 
@@ -128,9 +124,6 @@ class RedisDB:
             response = await reader.read(100)
             print(f"Received response: {response.decode().strip()}")
 
-            # Close the connection
-            writer.close()
-            await writer.wait_closed()
         except Exception as e:
             print(f"Error during handshake: {e}")
 
@@ -141,17 +134,47 @@ class RedisDB:
             print("here in client")
             
             try:
-                data_input = await asyncio.wait_for(reader.read(2048), timeout=TIMEOUT) # read the data from the client
+                data = await asyncio.wait_for(reader.read(2048), timeout=TIMEOUT) # read the data from the client
 
-                if not data_input:
+                if not data:
                     break
                 
                 resp=''
-                resp = self.parse_input(data_input)
                 
+                
+                data_list = []
+                
+                data_list = data.decode().split("\r\n") 
+
+                bulk_string_data = [data_list[i] for i in range(1,len(data_list)) if i%2==0] #parses the data and stores only the bulk strings
+
+                print(bulk_string_data)
+
+                command = bulk_string_data[0]
+
+
+                if command in self.two_command:
+                    command+=bulk_string_data[1]
+                
+                print(command)
+
+                command_method = getattr(CommandExecutor, command.lower())
+
+                self.rdb_load()
+                
+                resp = command_method(self, bulk_string_data)
+
                 resp = resp.encode()
 
                 writer.write(resp) # reply to the client with pong (hardcoded for now)
+                if command == "PSYNC":
+                    with open(f'{self.dir}/{self.file}', 'r') as f: 
+                        resp  = bytes.fromhex(f.read())
+                        print("here in resync")
+                        resp1 = f"${len(resp)}\r\n"
+                        writer.write(resp1.encode())
+                        writer.write(resp)
+
             except asyncio.TimeoutError:
                 print("Client request timeout.")
                 break
