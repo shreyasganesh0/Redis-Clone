@@ -26,6 +26,9 @@ class RedisDB:
     master_offset: int
     replicas_list: list =[]
     replica_capabilities_list: dict ={}
+    propogate_to_replica: set = set(['set','del'])
+    replica_connection_obj_pool = {}
+
     def init_master(self, length=40):
         alphabet = string.ascii_letters + string.digits
         self.master_replid =''.join(secrets.choice(alphabet) for _ in range(length))
@@ -98,7 +101,6 @@ class RedisDB:
             resp = f"*1\r\n$4\r\nPING\r\n"
             reader, writer = await asyncio.open_connection(master_host,master_port)
             
-            
             resp = resp.encode()
             writer.write(resp)
 
@@ -141,7 +143,6 @@ class RedisDB:
                 
                 resp=''
                 
-                
                 data_list = []
                 
                 data_list = data.decode().split("\r\n") 
@@ -152,13 +153,15 @@ class RedisDB:
 
                 command = bulk_string_data[0]
 
-
                 if command in self.two_command:
                     command+=bulk_string_data[1]
                 
-                print(command)
+                command = command.lower()
+                if command == "replconf":
 
-                command_method = getattr(CommandExecutor, command.lower())
+                    self.replica_connection_obj_pool[bulk_string_data[2]] = writer
+
+                command_method = getattr(CommandExecutor, command)
 
                 self.rdb_load()
                 
@@ -166,14 +169,24 @@ class RedisDB:
 
                 resp = resp.encode()
 
-                writer.write(resp) # reply to the client with pong (hardcoded for now)
-                if command == "PSYNC":
+                writer.write(resp)
+                print("finished writitng to client", command)
+                if command == "psync":
                     with open(f'{self.dir}/{self.file}', 'r') as f: 
                         resp  = bytes.fromhex(f.read())
                         print("here in resync")
                         resp1 = f"${len(resp)}\r\n"
                         writer.write(resp1.encode())
                         writer.write(resp)
+                        print(writer.get_extra_info('peername'))
+
+                if command in self.propogate_to_replica:
+                    print("Propogating to replicas", resp)
+                    for i in self.replicas_list:
+                        temp_writer = self.replica_connection_obj_pool[i]
+                        temp_writer.write(data)
+                        print(f"senf {data} to {self.replica_connection_obj_pool[i]}")
+
 
             except asyncio.TimeoutError:
                 print("Client request timeout.")
