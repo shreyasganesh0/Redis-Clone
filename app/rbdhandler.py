@@ -29,8 +29,8 @@ class RdbHandler:
             for i in range(6,-1,-1):
                 bits_list.append( str((byte_val >> (i)) & 1))
         else:
-            for i in range(8,6,-1):
-                bits_list.append( str((byte_val >> (i)) & 1))
+            for i in range(8-number_of_bits,8):
+                bits_list.append( str((byte_val >>(i)) & 1))
 
         return "".join(bits_list)
 
@@ -70,6 +70,14 @@ class RdbHandler:
             print ("File is empty",e)
 
         return
+    def replica_filehandler(self, obj, data):
+        try:
+            self.file_byte_data = data
+            self.rdb_file_parser()
+            self.set_rdb_keys(obj)
+        except Exception as e:
+            print(e)
+
 
     def valid_file(self):
         
@@ -241,7 +249,10 @@ class RdbHandler:
                     
                     length_of_bytes= self.length_encoding_decode()
 
-                    data = str(self.file_byte_data[self.position_in_file+1:self.position_in_file+length_of_bytes+1],'utf-8')
+                    data = (self.file_byte_data[self.position_in_file+1:self.position_in_file+length_of_bytes+1])
+
+                    print("data", data)
+
                     self.subsections_values_dict[current_header_for_data][key]=data
                     
                     self.position_in_file+=length_of_bytes+1
@@ -275,12 +286,11 @@ class RdbHandler:
 
             case "00":
                 length_of_data_in_bytes = int(self.read_bits(number_of_bits = 6, option_for_sub_byte_parsing = True),2)
-               
             
             case "01":
                 length_of_data_in_bytes = int(self.read_bits(number_of_bits= 6, option_for_sub_byte_parsing = True),2)
                 self.position_in_file+= 1
-                length_of_data_in_bytes = int(self.read_bits(number_of_bits= 8),2)
+                length_of_data_in_bytes = int(self.file_byte_data[self.position_in_file])
 
             case "10":
                 print("in 10")
@@ -288,7 +298,7 @@ class RdbHandler:
                 string_of_bits_for_length_encoding=""
                 for i in range(4):
                      string_of_bits_for_length_encoding += str(self.read_bits(number_of_bits= 8))
-                length_of_data_in_bytes =int(string_of_bits_for_length_encoding)
+                length_of_data_in_bytes = int(string_of_bits_for_length_encoding)
             
             case "11":
                 format_of_encoded_string = int(str(self.read_bits(number_of_bits = 6, option_for_sub_byte_parsing = True)))

@@ -28,6 +28,7 @@ class CommandExecutor:
 
     @staticmethod
     def set( *args):
+        print("in set")
 
         print(args)
         if len(args[1])<=3:

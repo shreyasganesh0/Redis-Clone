@@ -123,21 +123,94 @@ class RedisDB:
             psync = f"*3\r\n$5\r\nPSYNC\r\n${len(master_replid)}\r\n{master_replid}\r\n${len(master_offset)}\r\n{master_offset}\r\n"
 
             writer.write(psync.encode()) 
-            response = await reader.read(100)
-            print(f"Received response: {response.decode().strip()}")
+            response = await reader.read(56)
+            print(f"Received response: {response}")
+            
+            return reader, writer
 
+            
         except Exception as e:
             print(f"Error during handshake: {e}")
+
+    def multi_command_parser(self, data_list):
+        i=0
+        num_elements =0
+        while i < len(data_list): 
+            if num_elements<1:
+
+                if data_list[i].startswith("*"):
+                    num_elements = int(data_list[i].strip("*"))
+                    i+=1
+                    continue
+            else:
+                yield data_list[i:i+2*num_elements]
+                i+=num_elements*2
+                
+
+    async def master_listener(self, reader, writer):
+        while True:
+            print("In master listener", self.port)
+            try:
+                message = await asyncio.wait_for(reader.read(1000), timeout=30)
+                print(message)
+                if not message:
+                    print("Master connection closed.")
+                    break 
+                resp=''
+                print(message[5:10])
+
+                if message[5:10] == b'REDIS':
+                    message = message[5:]
+                    rdb = RdbHandler()
+                    #rdb.replica_filehandler(self,message)
+                    continue
+
+                
+                data_list = []
+                
+                data_list = message.decode().split("\r\n") 
+
+                i=0
+                num_elements =0
+                while i < len(data_list): 
+
+                    if data_list[i].startswith("*"):
+                        num_elements = int(data_list[i].strip("*"))
+                        i+=1
+                        continue
+                    else:
+                        mini_list = data_list[i:i+2*num_elements]
+                        i+=num_elements*2
+                    print ("mini_list",mini_list)
+
+                    bulk_string_data = [mini_list[j] for j in range(len(mini_list)) if j%2!=0] #parses the data and stores only the bulk strings
+
+                    print(bulk_string_data)
+
+                    command = bulk_string_data[0]
+
+                    if command in self.two_command:
+                        command+=bulk_string_data[1]
+                    
+                    command = command.lower()
+
+                    command_method = getattr(CommandExecutor, command)
+
+                    resp = command_method(self, bulk_string_data) 
+                
+                # Handle the message from the master
+            except Exception as e:
+                print(f"Error in master listener: {e}")
 
 
     async def client_req_resp(self, reader, writer) -> None:
 
         while True:
-            print("here in client")
+            print("here in client", self.port)
             
             try:
-                data = await asyncio.wait_for(reader.read(2048), timeout=TIMEOUT) # read the data from the client
 
+                data = await asyncio.wait_for(reader.read(1000), timeout=30)
                 if not data:
                     break
                 
@@ -198,21 +271,24 @@ class RedisDB:
         await writer.wait_closed()
 
     async def main(self):
-        # You can use print statements as follows for debugging, they'll be visible when running tests.
-        print("Logs from your program will appear here!")
-        
+        print("starting program")
         self.arg_parser_init()
         if self.replicaof == "ismaster":
             self.init_master(40)
         else:
             print("here in client")
-            await self.replica_handshake()
-        print(self.host,self.port)
-        server = await asyncio.start_server(self.client_req_resp,self.host, self.port)
+            
+            reader, writer = await self.replica_handshake()
+            
+            listener_task = asyncio.create_task(self.master_listener(reader, writer))
+            asyncio.gather(listener_task)
         
+        print(self.host,self.port)
+        
+        server = await asyncio.start_server(self.client_req_resp, self.host, self.port) 
         async with server:
             await server.serve_forever()
-
+        
 
 if __name__ == "__main__":
     dbobj = RedisDB()
