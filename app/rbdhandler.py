@@ -24,12 +24,13 @@ class RdbHandler:
         byte_val = self.file_byte_data[self.position_in_file]
 
         bits_list =[]
+        print("byte calc", byte_val)
 
         if option_for_sub_byte_parsing:
             for i in range(6,-1,-1):
                 bits_list.append( str((byte_val >> (i)) & 1))
         else:
-            for i in range(8-number_of_bits,8):
+            for i in range(8,6,-1):
                 bits_list.append( str((byte_val >>(i)) & 1))
 
         return "".join(bits_list)
@@ -239,7 +240,6 @@ class RdbHandler:
                     length_of_bytes = self.length_encoding_decode()
                     key = str(self.file_byte_data[self.position_in_file+1:self.position_in_file+length_of_bytes+1],'utf-8')
                     key=key[:]
-                    print(key)
 
                     self.subsections_values_dict[current_header_for_data][key]=""
 
@@ -290,7 +290,7 @@ class RdbHandler:
             case "01":
                 length_of_data_in_bytes = int(self.read_bits(number_of_bits= 6, option_for_sub_byte_parsing = True),2)
                 self.position_in_file+= 1
-                length_of_data_in_bytes = int(self.file_byte_data[self.position_in_file])
+                length_of_data_in_bytes = 0
 
             case "10":
                 print("in 10")
@@ -321,7 +321,7 @@ class RdbHandler:
                         self.position_in_file += 1
                         #clen follows might have to call this method again a little too complex to tackle for now will come back to this
                 length_of_data_in_bytes =length_of_integer_in_bits //8
-
+        print(length_of_data_in_bytes, " length in bytes")
         return length_of_data_in_bytes
     
 
