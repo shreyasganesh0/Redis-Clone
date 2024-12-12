@@ -135,6 +135,9 @@ class CommandExecutor:
         elif args[1][1] == "capa":
             obj.replica_capabilities_list[obj.replicas_list[-1]] = args[1][2]
             resp = "+OK\r\n"
+        elif args[1][1] == "GETACK":
+            requested_acks = args[1][2]
+            resp = "*3\r\n$8\r\nREPLCONF\r\n$3\r\nACK\r\n$1\r\n0\r\n"
         else:
             raise ReplConfException()
         return resp

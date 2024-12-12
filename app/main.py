@@ -145,7 +145,33 @@ class RedisDB:
             else:
                 yield data_list[i:i+2*num_elements]
                 i+=num_elements*2
-                
+    
+    def command_sender(self, data):
+        print("data is ", data[0:5])
+        if data[0:5] == b'REDIS':
+            rdb = RdbHandler()
+            #rdb.replica_filehandler(self,message)
+            resp = -1
+            return resp
+        if data[0:8] == b'REPLCONF':
+            resp = getattr(CommandExecutor, data)
+        data = data.decode()
+        bulk_string_data = [data[j] for j in range(len(data)) if j%2!=0] #parses the data and stores only the bulk strings
+
+        print(bulk_string_data)
+
+        command = bulk_string_data[0]
+
+        if command in self.two_command:
+            command+=bulk_string_data[1]
+        
+        command = command.lower()
+
+        command_method = getattr(CommandExecutor, command)
+
+        resp = command_method(self, bulk_string_data) 
+
+        return resp
 
     async def master_listener(self, reader, writer):
         while True:
@@ -157,46 +183,44 @@ class RedisDB:
                     print("Master connection closed.")
                     break 
                 resp=''
-                print(message[5:10])
-
-                if message[5:10] == b'REDIS':
-                    message = message[5:]
-                    rdb = RdbHandler()
-                    #rdb.replica_filehandler(self,message)
-                    continue
-
                 
                 data_list = []
-                
-                data_list = message.decode().split("\r\n") 
+                data_list1 = []
+                messageparse =""
+                d = b"*"
+
+                data_list1 =  [d+e for i,e in enumerate(message.split(d)) if e and i!=0]
+                print(data_list1)
+                for m in data_list1:
+                    if m[1] == b"$":
+                        m.strip(b"*")
+                    messagparse+= m
+                data_list = messageparse.split(b"\r\n")
+                print(data_list)
 
                 i=0
                 num_elements =0
-                while i < len(data_list): 
+                
+                while i < len(data_list):
+                    match(data_list[i][0]):
 
-                    if data_list[i].startswith("*"):
-                        num_elements = int(data_list[i].strip("*"))
-                        i+=1
-                        continue
-                    else:
-                        mini_list = data_list[i:i+2*num_elements]
-                        i+=num_elements*2
+                        case b"*":
+                            num_elements = int(data_list[i].strip(b"*"))
+                            i+=1
+                            continue
+
+                        case _:
+                            if num_elements == 0 :
+                                mini_list = data_list[i+1]
+                                i+=2
+                            else:
+                                mini_list = data_list[i:i+2*num_elements]
+                                i+=2*num_elements+1
+
                     print ("mini_list",mini_list)
 
-                    bulk_string_data = [mini_list[j] for j in range(len(mini_list)) if j%2!=0] #parses the data and stores only the bulk strings
-
-                    print(bulk_string_data)
-
-                    command = bulk_string_data[0]
-
-                    if command in self.two_command:
-                        command+=bulk_string_data[1]
+                    resp = self.command_sender(mini_list)
                     
-                    command = command.lower()
-
-                    command_method = getattr(CommandExecutor, command)
-
-                    resp = command_method(self, bulk_string_data) 
                 
                 # Handle the message from the master
             except Exception as e:
@@ -220,6 +244,7 @@ class RedisDB:
                 
                 data_list = data.decode().split("\r\n") 
 
+                resp = self.command_sender(data_list[1:])
                 bulk_string_data = [data_list[i] for i in range(1,len(data_list)) if i%2==0] #parses the data and stores only the bulk strings
 
                 print(bulk_string_data)
